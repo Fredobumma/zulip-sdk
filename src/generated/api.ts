@@ -11481,7 +11481,8 @@ export interface Operations {
 	 *
 	 * Update which channels you are subscribed to.
 	 *
-	 * @see https://zulip.com/api/update-subscriptions
+	 * @see https://zulip.com/api/subscribe
+	 * @see https://zulip.com/api/unsubscribe
 	 */
 	updateSubscriptions: { params: UpdateSubscriptionsParams; response: UpdateSubscriptionsResponse };
 	/**

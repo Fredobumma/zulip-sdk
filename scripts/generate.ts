@@ -66,6 +66,12 @@ const spec = parse(readFileSync('spec/zulip.yaml', 'utf8')) as {
 };
 
 const DOCS = 'https://zulip.com';
+// Each method links to https://zulip.com/api/<operationId>, except where zulip.com has no
+// such page: these are documented on other pages instead (checked against Zulip 12.3).
+const DOCS_PAGES: Record<string, string[]> = {
+	// PATCH /users/me/subscriptions adds and removes in one request.
+	'update-subscriptions': ['subscribe', 'unsubscribe'],
+};
 const IDENTIFIER = /^[A-Za-z_$][A-Za-z0-9_$]*$/;
 
 function pascal(value: string): string {
@@ -383,7 +389,10 @@ for (const [path, item] of Object.entries(spec.paths)) {
 		];
 		if (operation['x-requires-administrator']) docs.push('', 'Needs an organization administrator.');
 		if (operation['x-requires-owner']) docs.push('', 'Needs an organization owner.');
-		docs.push('', `@see ${DOCS}/api/${operation.operationId}`);
+		docs.push(
+			'',
+			...(DOCS_PAGES[operation.operationId] ?? [operation.operationId]).map((page) => `@see ${DOCS}/api/${page}`),
+		);
 		if (operation.deprecated) docs.push('@deprecated');
 
 		operationDeclarations.push(
