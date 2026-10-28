@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Types, lint and unit tests. The integration tests run in their own job, once.
+      - run: pnpm check
+        env:
+          ZULIP_SKIP: "1"
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The tests only start Zulip when its images are already here, so pull them first.
+      - name: Pull the Zulip 12.3 stack
+        run: grep -o 'image: "[^"]*"' test/zulip/compose.yaml | cut -d'"' -f2 | xargs -n1 docker pull --quiet
+      - run: pnpm test

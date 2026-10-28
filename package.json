@@ -1,0 +1,61 @@
+{
+	"name": "zulip-sdk",
+	"version": "0.1.0",
+	"description": "A typed TypeScript SDK for the Zulip API, generated from Zulip's own OpenAPI description, with a real-time events iterator.",
+	"keywords": [
+		"zulip",
+		"chat",
+		"api",
+		"sdk",
+		"typescript",
+		"bot",
+		"zulip-js"
+	],
+	"license": "MIT",
+	"author": "Manfred Obumma <fredobumma@gmail.com>",
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/fredobumma/zulip-sdk.git"
+	},
+	"homepage": "https://github.com/fredobumma/zulip-sdk#readme",
+	"bugs": "https://github.com/fredobumma/zulip-sdk/issues",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./node": {
+			"types": "./dist/node.d.ts",
+			"default": "./dist/node.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"src"
+	],
+	"engines": {
+		"node": ">=22"
+	},
+	"scripts": {
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
+		"prepack": "pnpm build",
+		"typecheck": "tsc -p tsconfig.json",
+		"lint": "biome check .",
+		"format": "biome check --write .",
+		"test": "vitest run",
+		"generate": "tsx scripts/generate.ts",
+		"check": "pnpm typecheck && pnpm lint && pnpm test"
+	},
+	"packageManager": "pnpm@10.5.2",
+	"devDependencies": {
+		"@biomejs/biome": "2.5.15",
+		"@types/node": "26.6.5",
+		"tsx": "4.23.15",
+		"typescript": "7.0.2",
+		"vitest": "5.0.4",
+		"yaml": "2.9.1"
+	}
+}

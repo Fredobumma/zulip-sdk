@@ -1,0 +1,99 @@
+# A throwaway Zulip for the integration tests, at http://zulip.test:9991 (the
+# tests resolve zulip.test to 127.0.0.1 themselves; Zulip needs a domain name).
+# Based on docker-zulip's compose.yaml and its HTTP-only CI setup. The
+# database lives in memory, so every start is a fresh server.
+name: zulip-sdk-test
+
+secrets:
+  zulip__postgres_password:
+    environment: "ZULIP__POSTGRES_PASSWORD"
+  zulip__memcached_password:
+    environment: "ZULIP__MEMCACHED_PASSWORD"
+  zulip__rabbitmq_password:
+    environment: "ZULIP__RABBITMQ_PASSWORD"
+  zulip__redis_password:
+    environment: "ZULIP__REDIS_PASSWORD"
+  zulip__secret_key:
+    environment: "ZULIP__SECRET_KEY"
+  zulip__email_password:
+    environment: "ZULIP__EMAIL_PASSWORD"
+
+services:
+  database:
+    image: "zulip/zulip-postgresql:14"
+    secrets:
+      - zulip__postgres_password
+    environment:
+      POSTGRES_DB: "zulip"
+      POSTGRES_USER: "zulip"
+      POSTGRES_PASSWORD_FILE: /run/secrets/zulip__postgres_password
+    tmpfs:
+      - /var/lib/postgresql/data
+  memcached:
+    image: "memcached:alpine"
+    command:
+      - "sh"
+      - "-euc"
+      - |
+        echo 'mech_list: plain' > "$$SASL_CONF_PATH"
+        echo "zulip@$$HOSTNAME:$$(cat $$MEMCACHED_PASSWORD_FILE)" > "$$MEMCACHED_SASL_PWDB"
+        echo "zulip@localhost:$$(cat $$MEMCACHED_PASSWORD_FILE)" >> "$$MEMCACHED_SASL_PWDB"
+        exec memcached -S
+    secrets:
+      - zulip__memcached_password
+    environment:
+      SASL_CONF_PATH: "/home/memcache/memcached.conf"
+      MEMCACHED_SASL_PWDB: "/home/memcache/memcached-sasl-db"
+      MEMCACHED_PASSWORD_FILE: /run/secrets/zulip__memcached_password
+  rabbitmq:
+    image: "rabbitmq:4.2"
+    command:
+      - "sh"
+      - "-euc"
+      - |
+        export RABBITMQ_DEFAULT_PASS="$$(cat $$RABBITMQ_PASSWORD_FILE)"
+        echo 'default_user = $$(RABBITMQ_DEFAULT_USER)' >> /etc/rabbitmq/rabbitmq.conf
+        echo 'default_pass = $$(RABBITMQ_DEFAULT_PASS)' >> /etc/rabbitmq/rabbitmq.conf
+        exec docker-entrypoint.sh rabbitmq-server
+    secrets:
+      - zulip__rabbitmq_password
+    environment:
+      RABBITMQ_DEFAULT_USER: "zulip"
+      RABBITMQ_PASSWORD_FILE: /run/secrets/zulip__rabbitmq_password
+  redis:
+    image: "redis:alpine"
+    command:
+      - "sh"
+      - "-euc"
+      - '/usr/local/bin/docker-entrypoint.sh --requirepass "$$(cat $$REDIS_PASSWORD_FILE)"'
+    secrets:
+      - zulip__redis_password
+    environment:
+      REDIS_PASSWORD_FILE: /run/secrets/zulip__redis_password
+  zulip:
+    image: "ghcr.io/zulip/zulip-server:12.3-0"
+    ports:
+      - "127.0.0.1:9991:80"
+    secrets:
+      - zulip__postgres_password
+      - zulip__memcached_password
+      - zulip__rabbitmq_password
+      - zulip__redis_password
+      - zulip__secret_key
+      - zulip__email_password
+    environment:
+      SETTING_REMOTE_POSTGRES_HOST: "database"
+      SETTING_MEMCACHED_LOCATION: "memcached:11211"
+      SETTING_RABBITMQ_HOST: "rabbitmq"
+      SETTING_REDIS_HOST: "redis"
+      SETTING_EXTERNAL_HOST: "zulip.test:9991"
+      SETTING_ZULIP_ADMINISTRATOR: "admin@example.com"
+      # Zulip only serves HTTP behind a trusted proxy. Requests from the host
+      # arrive from Docker Desktop's VM address or a bridge gateway, and the
+      # tests send X-Forwarded-For and X-Forwarded-Proto as a proxy would.
+      LOADBALANCER_IPS: "192.168.65.1,172.16.0.0/12"
+    depends_on:
+      - database
+      - memcached
+      - rabbitmq
+      - redis
