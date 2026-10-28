@@ -1,5 +1,6 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { createClient, isZulipError, ZulipError, type ZulipEvent } from '../src/index.js';
+import { createClient, isZulipError, VERSION, ZulipError, type ZulipEvent } from '../src/index.js';
 import { parseZuliprc } from '../src/node.js';
 
 type Handler = (request: Request) => Response | Promise<Response>;
@@ -177,5 +178,12 @@ describe('zuliprc', () => {
 			apiKey: 'abc123',
 		});
 		expect(() => parseZuliprc('[api]\nemail=x')).toThrow('needs email, key and site');
+	});
+});
+
+describe('version', () => {
+	it('matches package.json, so the default user agent names the installed release', () => {
+		const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+		expect(VERSION).toBe(pkg.version);
 	});
 });

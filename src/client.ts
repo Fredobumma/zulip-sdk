@@ -7,7 +7,7 @@ import {
 	type ZulipEvent,
 } from './generated/api.js';
 
-export const VERSION = '0.1.0';
+export const VERSION = '0.1.1';
 
 export interface ClientOptions {
 	/** The organization's address, such as `https://chat.zulip.org` or `https://example.zulipchat.com`. */

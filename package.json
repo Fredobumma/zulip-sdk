@@ -1,6 +1,6 @@
 {
 	"name": "zulip-sdk",
-	"version": "0.1.0",
+	"version": "0.1.1",
 	"description": "A typed TypeScript SDK for the Zulip API, generated from Zulip's own OpenAPI description, with a real-time events iterator.",
 	"keywords": [
 		"zulip",
